@@ -10,6 +10,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Support both .env (local) and Streamlit secrets (cloud)
+def get_openai_key():
+    key = os.getenv('OPENAI_API_KEY')
+    if not key:
+        try:
+            key = st.secrets.get('OPENAI_API_KEY')
+        except:
+            pass
+    return key
+
 from openai import OpenAI
 from xer_analyzer import XERAnalyzer
 
@@ -131,7 +141,7 @@ def get_ai_response(user_query: str) -> str:
     """Generate response using LLM with code generation"""
 
     analyzer = st.session_state.analyzer
-    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+    client = OpenAI(api_key=get_openai_key())
 
     # Step 1: Get pre-computed basic stats (always available)
     basic_stats = analyzer.get_basic_stats()
@@ -420,8 +430,8 @@ Ask me anything about your schedule!
 # =============================================================================
 
 def main():
-    if not os.getenv('OPENAI_API_KEY'):
-        st.error("OPENAI_API_KEY not found in .env file")
+    if not get_openai_key():
+        st.error("OPENAI_API_KEY not found. Set it in .env (local) or Streamlit secrets (cloud).")
         st.stop()
 
     if not st.session_state.baseline_loaded:
